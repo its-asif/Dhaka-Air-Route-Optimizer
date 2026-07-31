@@ -378,15 +378,15 @@ function displayRoute(routeData) {
                 ).addTo(map);
                 
                 marker.bindPopup(`
-                    <div style="font-family: Inter, sans-serif; min-width: 200px;">
-                        <h4 style="margin: 0 0 10px 0; color: #224F76;">Checkpoint ${index + 1}</h4>
+                    <div style="font-family: Inter, sans-serif; min-width: 200px; color: #f2f5fa;">
+                        <h4 style="margin: 0 0 10px 0; color: #5b8cff; letter-spacing: 0.02em;">Checkpoint ${index + 1}</h4>
                         <div style="margin: 6px 0;">
                             <strong>AQI:</strong> ${Math.round(aqiPoint.aqi)} 
-                            <span style="background: ${getAQIColor(aqiPoint.aqi)}; padding: 2px 6px; border-radius: 4px; font-size: 0.85em; color: ${aqiPoint.aqi > 150 ? '#fff' : '#000'};">
+                            <span style="background: ${getAQIColor(aqiPoint.aqi)}; padding: 2px 8px; border-radius: 999px; font-size: 0.85em; color: ${aqiPoint.aqi > 150 ? '#fff' : '#000'};">
                                 ${getAQICategory(aqiPoint.aqi)}
                             </span>
                         </div>
-                        <hr style="margin: 8px 0; border: none; border-top: 1px solid #e0e0e0;">
+                        <hr style="margin: 8px 0; border: none; border-top: 1px solid #232c3d;">
                         <div style="margin: 4px 0;"><strong>PM2.5:</strong> ${aqiPoint.pm25 || 'N/A'} µg/m³</div>
                         <div style="margin: 4px 0;"><strong>PM10:</strong> ${aqiPoint.pm10 || 'N/A'} µg/m³</div>
                         <div style="margin: 4px 0;"><strong>NO₂:</strong> ${aqiPoint.no2 || 'N/A'} µg/m³</div>
@@ -477,13 +477,13 @@ function displayComparisonRoutes(routes) {
         }).addTo(map);
         
         routePolyline.bindPopup(`
-            <div style="font-family: Inter, sans-serif;">
-                <h4 style="margin: 0 0 10px 0; color: ${color};">
-                    ${route.priority.toUpperCase()} Route
+            <div style="font-family: Inter, sans-serif; color: #f2f5fa; min-width: 180px;">
+                <h4 style="margin: 0 0 10px 0; color: ${color}; letter-spacing: 0.03em; font-size: 0.85rem;">
+                    ${route.priority.toUpperCase()} ROUTE
                 </h4>
-                <div><strong>Distance:</strong> ${route.distance} km</div>
-                <div><strong>Duration:</strong> ${Math.round(route.duration)} min</div>
-                <div><strong>Avg AQI:</strong> ${Math.round(route.average_aqi)}</div>
+                <div style="margin: 4px 0;"><strong>Distance:</strong> ${route.distance} km</div>
+                <div style="margin: 4px 0;"><strong>Duration:</strong> ${Math.round(route.duration)} min</div>
+                <div style="margin: 4px 0;"><strong>Avg AQI:</strong> <span style="background:${getAQIColor(route.average_aqi)}; color:${route.average_aqi > 150 ? '#fff' : '#000'}; padding:2px 8px; border-radius:999px; font-size:0.8em;">${Math.round(route.average_aqi)}</span></div>
             </div>
         `);
         
