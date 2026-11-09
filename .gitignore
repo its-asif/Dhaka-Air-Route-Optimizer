@@ -41,3 +41,6 @@ Thumbs.db
 dist/
 build/
 
+
+INTEGRATION_TEST_REPORT.md
+PROJECT_EXISTING_FEATURES.md

@@ -13,13 +13,27 @@ from .models import RouteHistory
 
 # Set up logging
 logger = logging.getLogger(__name__)
+routing_service = RoutingService()
+
+
+def landing(request):
+    """Landing home page with project information, awareness, and CTA buttons."""
+    return render(request, 'route_optimizer/landing.html')
 
 
 def index(request):
-    """Main page"""
+    """Main interactive route optimization dashboard page."""
     return render(request, 'route_optimizer/index.html')
 
 
+def live_report(request):
+    """Live IoT air quality report page (ThingSpeak FEC AQI sensor)."""
+    return render(request, 'route_optimizer/live_report.html')
+
+
+from django.views.decorators.csrf import csrf_exempt
+
+@csrf_exempt
 @require_http_methods(["POST"])
 def find_route(request):
     """
@@ -48,7 +62,8 @@ def find_route(request):
         # Geocode addresses if coordinates not provided
         if not (source_lat and source_lng) and source_address:
             logger.info("Geocoding source: %s", source_address)
-            source_coords = routing_service.geocode_address(f"{source_address}, Dhaka")
+            geocode_query = source_address if 'dhaka' in source_address.lower() else f"{source_address}, Dhaka"
+            source_coords = routing_service.geocode_address(geocode_query)
             if source_coords:
                 source_lng, source_lat = source_coords  # Returns (lng, lat)
                 logger.info("Source coords: (%.4f, %.4f)", source_lat, source_lng)
@@ -61,7 +76,8 @@ def find_route(request):
         
         if not (dest_lat and dest_lng) and dest_address:
             logger.info("Geocoding destination: %s", dest_address)
-            dest_coords = routing_service.geocode_address(f"{dest_address}, Dhaka")
+            geocode_query = dest_address if 'dhaka' in dest_address.lower() else f"{dest_address}, Dhaka"
+            dest_coords = routing_service.geocode_address(geocode_query)
             if dest_coords:
                 dest_lng, dest_lat = dest_coords  # Returns (lng, lat)
                 logger.info("Destination coords: (%.4f, %.4f)", dest_lat, dest_lng)
@@ -191,6 +207,7 @@ def find_route(request):
         return JsonResponse(error_response, status=500)
 
 
+@csrf_exempt
 @require_http_methods(["POST"])
 def compare_routes(request):
     """
@@ -199,25 +216,105 @@ def compare_routes(request):
     try:
         data = json.loads(request.body)
         
-        source_lat = float(data.get('source_lat'))
-        source_lng = float(data.get('source_lng'))
-        dest_lat = float(data.get('dest_lat'))
-        dest_lng = float(data.get('dest_lng'))
+        source_address = data.get('source_address')
+        dest_address = data.get('destination_address')
+        source_lat = data.get('source_lat')
+        source_lng = data.get('source_lng')
+        dest_lat = data.get('dest_lat')
+        dest_lng = data.get('dest_lng')
+        
+        routing_service = RoutingService()
+        
+        # Geocode addresses if coordinates not provided
+        if not (source_lat and source_lng) and source_address:
+            geocode_query = source_address if 'dhaka' in source_address.lower() else f"{source_address}, Dhaka"
+            source_coords = routing_service.geocode_address(geocode_query)
+            if source_coords:
+                source_lng, source_lat = source_coords
+            else:
+                return JsonResponse({
+                    'success': False,
+                    'error': f'Could not geocode source address: {source_address}'
+                }, status=400)
+        
+        if not (dest_lat and dest_lng) and dest_address:
+            geocode_query = dest_address if 'dhaka' in dest_address.lower() else f"{dest_address}, Dhaka"
+            dest_coords = routing_service.geocode_address(geocode_query)
+            if dest_coords:
+                dest_lng, dest_lat = dest_coords
+            else:
+                return JsonResponse({
+                    'success': False,
+                    'error': f'Could not geocode destination address: {dest_address}'
+                }, status=400)
+        
+        if not all([source_lat, source_lng, dest_lat, dest_lng]):
+            return JsonResponse({
+                'success': False,
+                'error': 'Invalid coordinates or addresses. Please provide valid locations.'
+            }, status=400)
+        
+        source_lat = float(source_lat)
+        source_lng = float(source_lng)
+        dest_lat = float(dest_lat)
+        dest_lng = float(dest_lng)
         
         logger.info("Comparing routes: (%.4f, %.4f) → (%.4f, %.4f)",
                     source_lat, source_lng, dest_lat, dest_lng)
         
         optimizer = RouteOptimizer()
-        comparison = optimizer.compare_routes(
+        raw_comparison = optimizer.compare_routes(
             source_lat, source_lng, dest_lat, dest_lng
         )
+        
+        try:
+            source_name = routing_service.reverse_geocode(source_lng, source_lat) or source_address or "Source"
+            dest_name = routing_service.reverse_geocode(dest_lng, dest_lat) or dest_address or "Destination"
+        except Exception as e:
+            logger.warning("Could not reverse geocode in compare_routes: %s", e)
+            source_name = source_address or "Source"
+            dest_name = dest_address or "Destination"
+        
+        formatted_comparison = {}
+        for priority_key, route_result in raw_comparison.items():
+            formatted_comparison[priority_key] = {
+                'source': {
+                    'lat': source_lat,
+                    'lng': source_lng,
+                    'name': source_name
+                },
+                'destination': {
+                    'lat': dest_lat,
+                    'lng': dest_lng,
+                    'name': dest_name
+                },
+                'distance': round(route_result['distance'], 2),
+                'duration': round(route_result['duration'], 2),
+                'average_aqi': round(route_result['average_aqi'], 2),
+                'geometry': route_result['geometry'],
+                'coordinates': route_result['coordinates'],
+                'aqi_data': route_result.get('aqi_data', []),
+                'priority': priority_key
+            }
         
         logger.info("Route comparison complete")
         
         return JsonResponse({
             'success': True,
-            'comparison': comparison
+            'comparison': formatted_comparison
         })
+        
+    except json.JSONDecodeError as e:
+        return JsonResponse({
+            'success': False,
+            'error': 'Invalid JSON in request body'
+        }, status=400)
+        
+    except ValueError as e:
+        return JsonResponse({
+            'success': False,
+            'error': f'Invalid data format: {str(e)}'
+        }, status=400)
         
     except Exception as e:
         logger.error("Error comparing routes: %s", e, exc_info=True)
@@ -262,6 +359,7 @@ def get_history(request):
         }, status=500)
 
 
+@csrf_exempt
 @require_http_methods(["POST"])
 def get_aqi(request):
     """
@@ -297,4 +395,21 @@ def get_aqi(request):
             'success': False,
             'error': str(e)
         }, status=500)
+
+
+def geocode_autocomplete(request):
+    """
+    API endpoint for real-time location autocomplete suggestions as user types.
+    Query param: ?q=location_name
+    """
+    query = request.GET.get('q', '').strip()
+    if not query:
+        return JsonResponse({'success': True, 'suggestions': []})
+    
+    try:
+        suggestions = routing_service.autocomplete_address(query, limit=5)
+        return JsonResponse({'success': True, 'suggestions': suggestions})
+    except Exception as e:
+        logger.error("Error in geocode_autocomplete view: %s", e)
+        return JsonResponse({'success': False, 'suggestions': []})
 

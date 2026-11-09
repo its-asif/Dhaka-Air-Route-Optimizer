@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Live IoT air quality report — real-time PM1.0, PM2.5, PM10 readings from FEC AQI sensor.">
+    <title>Live IoT Report — Dhaka AQI</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+    <style>
+        :root {
+            --pm1-color: #38bdf8;
+            --pm25-color: #a78bfa;
+            --pm10-color: #fb923c;
+            --good-bg: rgba(34,197,94,0.12);
+            --good-border: #22c55e;
+        }
+
+        body {
+            background: var(--bg, #0d1117);
+            color: var(--text, #e6edf3);
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            overflow-x: hidden;
+        }
+
+        /* ── Nav ── */
+        .lr-nav {
+            position: sticky; top: 0; z-index: 100;
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 0.85rem 2rem;
+            background: rgba(13,17,23,0.92);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(255,255,255,0.07);
+        }
+        .lr-nav .logo { display: flex; align-items: center; gap: 0.6rem; text-decoration: none; }
+        .lr-nav .logo span { font-weight: 700; font-size: 1rem; color: var(--text, #e6edf3); }
+        .nav-links { display: flex; gap: 1.25rem; align-items: center; list-style: none; margin: 0; padding: 0; }
+        .nav-links a { color: #8b96ab; text-decoration: none; font-size: 0.875rem; font-weight: 500; transition: color 0.2s; }
+        .nav-links a:hover, .nav-links a.active { color: #e6edf3; }
+        .nav-pill {
+            padding: 0.4rem 0.95rem;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            color: #fff !important;
+            border-radius: 20px;
+            font-size: 0.8rem !important;
+        }
+
+        /* ── Page shell ── */
+        .lr-page { max-width: 1100px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+
+        /* ── Header bar ── */
+        .lr-header {
+            display: flex; align-items: flex-start; justify-content: space-between;
+            flex-wrap: wrap; gap: 1rem; margin-bottom: 2rem;
+        }
+        .lr-title { font-size: 1.6rem; font-weight: 700; letter-spacing: -0.02em; margin: 0; }
+        .lr-subtitle { color: #8b96ab; font-size: 0.875rem; margin: 0.25rem 0 0; }
+
+        .status-chip {
+            display: inline-flex; align-items: center; gap: 0.5rem;
+            padding: 0.4rem 0.9rem;
+            background: rgba(34,197,94,0.1);
+            border: 1px solid rgba(34,197,94,0.3);
+            border-radius: 20px;
+            font-size: 0.78rem; font-weight: 600; color: #4ade80;
+        }
+        .status-chip .dot {
+            width: 5px; height: 5px; border-radius: 50%;
+            background: #22c55e;
+            animation: pulse 2s ease-in-out infinite;
+        }
+        @keyframes pulse {
+            0%,100% { opacity: 1; transform: scale(1); }
+            50%      { opacity: 0.3; transform: scale(0.6); }
+        }
+
+        /* ── Stat cards ── */
+        .stat-row {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        .stat-card {
+            background: rgba(255,255,255,0.025);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,0.07);
+            border-radius: 14px;
+            padding: 1.25rem 1.5rem;
+            display: flex; flex-direction: column; gap: 0.3rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+        .stat-card::before {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+            opacity: 0.7; transition: opacity 0.3s;
+        }
+        .stat-card.pm1::before  { background: linear-gradient(90deg, var(--pm1-color), transparent); }
+        .stat-card.pm25::before { background: linear-gradient(90deg, var(--pm25-color), transparent); }
+        .stat-card.pm10::before { background: linear-gradient(90deg, var(--pm10-color), transparent); }
+        .stat-card:hover {
+            border-color: rgba(255,255,255,0.15);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+        }
+        .stat-tag { font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: #8b96ab; }
+        .stat-value { font-size: 2.2rem; font-weight: 700; letter-spacing: -0.03em; }
+        .stat-unit { font-size: 0.8rem; color: #8b96ab; margin-top: -0.25rem; }
+        .pm1  .stat-value { color: var(--pm1-color); }
+        .pm25 .stat-value { color: var(--pm25-color); }
+        .pm10 .stat-value { color: var(--pm10-color); }
+
+        /* ── Chart card ── */
+        .chart-card {
+            background: rgba(255,255,255,0.025);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,0.07);
+            border-radius: 14px;
+            padding: 1.5rem 1.75rem 1.75rem;
+            margin-bottom: 2rem;
+        }
+        .chart-card-header {
+            display: flex; align-items: center; justify-content: space-between;
+            margin-bottom: 1.25rem; flex-wrap: wrap; gap: 0.75rem;
+        }
+        .chart-card-title { font-size: 0.95rem; font-weight: 600; margin: 0; color: #e6edf3; }
+        .legend-pills { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+        .legend-pill {
+            display: inline-flex; align-items: center; gap: 0.35rem;
+            padding: 0.2rem 0.65rem;
+            border-radius: 20px;
+            font-size: 0.73rem; font-weight: 500;
+            border: 1px solid currentColor;
+        }
+        .legend-pill .swatch { width: 4px; height: 4px; border-radius: 50%; }
+        .pill-pm1  { color: var(--pm1-color);  background: rgba(56,189,248,0.08); }
+        .pill-pm25 { color: var(--pm25-color); background: rgba(167,139,250,0.08); }
+        .pill-pm10 { color: var(--pm10-color); background: rgba(251,146,60,0.08); }
+
+        .chart-wrapper { position: relative; height: 320px; }
+
+        /* ── Table ── */
+        .table-card {
+            background: rgba(255,255,255,0.025);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,0.07);
+            border-radius: 14px;
+            overflow: hidden;
+        }
+        .table-header {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid rgba(255,255,255,0.07);
+        }
+        .table-header h3 { margin: 0; font-size: 0.95rem; font-weight: 600; }
+        .refresh-info { font-size: 0.78rem; color: #8b96ab; }
+        #countdown { font-weight: 600; color: #6366f1; }
+
+        table { width: 100%; border-collapse: collapse; }
+        thead th {
+            padding: 0.7rem 1.25rem;
+            text-align: left;
+            font-size: 0.72rem; font-weight: 600;
+            text-transform: uppercase; letter-spacing: 0.07em;
+            color: #8b96ab;
+            background: rgba(255,255,255,0.015);
+            border-bottom: 1px solid rgba(255,255,255,0.07);
+        }
+        tbody tr { transition: background 0.15s; }
+        tbody tr:hover { background: rgba(255,255,255,0.04); }
+        tbody tr.latest-row { background: rgba(99,102,241,0.07); }
+        tbody td {
+            padding: 0.7rem 1.25rem;
+            font-size: 0.875rem;
+            border-bottom: 1px solid rgba(255,255,255,0.04);
+        }
+        .badge-pm {
+            display: inline-block;
+            padding: 0.15rem 0.55rem;
+            border-radius: 4px;
+            font-size: 0.8rem; font-weight: 600;
+        }
+        .badge-pm1  { background: rgba(56,189,248,0.15);  color: var(--pm1-color); }
+        .badge-pm25 { background: rgba(167,139,250,0.15); color: var(--pm25-color); }
+        .badge-pm10 { background: rgba(251,146,60,0.15);  color: var(--pm10-color); }
+
+        /* ── Error banner ── */
+        #errorBanner {
+            display: none;
+            background: rgba(239,68,68,0.1);
+            border: 1px solid rgba(239,68,68,0.3);
+            border-radius: 10px;
+            padding: 0.75rem 1.25rem;
+            color: #f87171;
+            font-size: 0.875rem;
+            margin-bottom: 1.5rem;
+        }
+
+        /* ── Controls toolbar ── */
+        .controls-bar {
+            display: flex; align-items: center; gap: 1rem;
+            flex-wrap: wrap;
+            background: rgba(255,255,255,0.025);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,0.07);
+            border-radius: 12px;
+            padding: 0.85rem 1.25rem;
+            margin-bottom: 1.75rem;
+        }
+        .ctrl-group {
+            display: flex; align-items: center; gap: 0.6rem;
+            flex: 1; min-width: 180px;
+        }
+        .ctrl-group-pts { flex: 2; min-width: 280px; }
+        .ctrl-label {
+            font-size: 0.78rem; font-weight: 600;
+            color: #8b96ab; white-space: nowrap;
+            text-transform: uppercase; letter-spacing: 0.06em;
+        }
+        .ctrl-value {
+            font-size: 0.82rem; font-weight: 700; color: #e6edf3;
+            min-width: 2.8rem; text-align: right;
+        }
+        input[type=range] {
+            -webkit-appearance: none; appearance: none;
+            flex: 1; height: 4px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 4px; outline: none; cursor: pointer;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 8px; height: 8px;
+            border-radius: 50%;
+            background: linear-gradient(135deg,#6366f1,#8b5cf6);
+            cursor: pointer; border: 1px solid #0d1117;
+            box-shadow: 0 0 4px rgba(99,102,241,0.5);
+            transition: transform 0.15s;
+        }
+        input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.3); }
+
+        /* Number input & presets */
+        .num-input-wrap {
+            display: flex; align-items: center;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 6px; padding: 0.2rem 0.5rem;
+            transition: border-color 0.2s;
+        }
+        .num-input-wrap:focus-within { border-color: #6366f1; }
+        .num-input-wrap input[type=number] {
+            width: 60px; background: transparent; border: none;
+            color: #e6edf3; font-weight: 700; font-size: 0.85rem;
+            outline: none; font-family: inherit;
+        }
+        .ctrl-unit { font-size: 0.75rem; color: #8b96ab; margin-left: 0.2rem; }
+
+        .preset-chips { display: flex; gap: 0.3rem; flex-wrap: wrap; }
+        .chip-btn {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 4px; color: #8b96ab;
+            font-size: 0.72rem; font-weight: 600;
+            padding: 0.2rem 0.45rem; cursor: pointer;
+            transition: all 0.15s;
+        }
+        .chip-btn:hover, .chip-btn.active {
+            background: rgba(99,102,241,0.2);
+            border-color: rgba(99,102,241,0.4);
+            color: #a5b4fc;
+        }
+        input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.25); }
+        .ctrl-divider {
+            width: 1px; height: 28px;
+            background: rgba(255,255,255,0.08);
+            flex-shrink: 0;
+        }
+        .ctrl-btn {
+            display: inline-flex; align-items: center; gap: 0.4rem;
+            padding: 0.4rem 0.9rem;
+            background: rgba(99,102,241,0.12);
+            border: 1px solid rgba(99,102,241,0.3);
+            border-radius: 8px;
+            color: #a5b4fc; font-size: 0.8rem; font-weight: 600;
+            cursor: pointer; transition: all 0.2s; white-space: nowrap;
+        }
+        .ctrl-btn:hover { background: rgba(99,102,241,0.22); color: #c7d2fe; }
+        .ctrl-btn.paused { background: rgba(251,146,60,0.12); border-color: rgba(251,146,60,0.3); color: #fdba74; }
+
+        @media (max-width: 700px) {
+            .stat-row { grid-template-columns: 1fr; }
+            .lr-nav { padding: 0.75rem 1rem; }
+            .chart-wrapper { height: 240px; }
+            .ctrl-divider { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ── Nav ── -->
+<nav class="lr-nav">
+    <a href="/" class="logo">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+            <path d="M2 17l10 5 10-5M2 12l10 5 10-5"></path>
+        </svg>
+        <span>Dhaka AQI Optimizer</span>
+    </a>
+    <ul class="nav-links">
+        <li><a href="/">Home</a></li>
+        <li><a href="/dashboard/">Dashboard</a></li>
+        <li><a href="/research/dashboard/">🔬 Research</a></li>
+        <li><a href="/live-report/" class="active">Live Report</a></li>
+        <li><a href="/dashboard/" class="nav-pill">Open Map →</a></li>
+    </ul>
+</nav>
+
+<!-- ── Page ── -->
+<div class="lr-page">
+
+    <!-- Header -->
+    <div class="lr-header">
+        <div>
+            <h1 class="lr-title">📡 Live IoT Air Quality Report</h1>
+            <p class="lr-subtitle" id="pageSubtitle">FEC AQI Sensor — real-time particulate matter readings</p>
+        </div>
+        <div class="status-chip" id="statusChip">
+            <span class="dot"></span>
+            <span id="statusText">Connecting…</span>
+        </div>
+    </div>
+
+    <!-- ── Controls toolbar ── -->
+    <div class="controls-bar">
+        <!-- Refresh rate -->
+        <div class="ctrl-group">
+            <span class="ctrl-label">⏱ Refresh</span>
+            <input type="range" id="refreshSlider" min="5" max="120" step="5" value="20">
+            <span class="ctrl-value"><span id="refreshVal">20</span>s</span>
+        </div>
+
+        <div class="ctrl-divider"></div>
+
+        <!-- Data points (unlimited input + presets) -->
+        <div class="ctrl-group ctrl-group-pts">
+            <span class="ctrl-label">📊 Show last</span>
+            <div class="num-input-wrap">
+                <input type="number" id="dataInput" min="1" max="8000" value="20">
+                <span class="ctrl-unit">pts</span>
+            </div>
+            <div class="preset-chips">
+                <button type="button" class="chip-btn" data-val="20">20</button>
+                <button type="button" class="chip-btn" data-val="50">50</button>
+                <button type="button" class="chip-btn" data-val="100">100</button>
+                <button type="button" class="chip-btn" data-val="500">500</button>
+                <button type="button" class="chip-btn" data-val="1000">1k</button>
+                <button type="button" class="chip-btn" data-val="8000">Max</button>
+            </div>
+        </div>
+
+        <div class="ctrl-divider"></div>
+
+        <!-- Pause / Resume -->
+        <button class="ctrl-btn" id="pauseBtn" onclick="togglePause()">⏸ Pause</button>
+
+        <!-- Refresh now -->
+        <button class="ctrl-btn" onclick="manualRefresh()">🔄 Now</button>
+    </div>
+
+    <!-- Error banner -->
+    <div id="errorBanner"></div>
+
+    <!-- Stat cards -->
+    <div class="stat-row">
+        <div class="stat-card pm1">
+            <span class="stat-tag">PM1.0 (latest)</span>
+            <span class="stat-value" id="val-pm1">—</span>
+            <span class="stat-unit">µg/m³</span>
+        </div>
+        <div class="stat-card pm25">
+            <span class="stat-tag">PM2.5 (latest)</span>
+            <span class="stat-value" id="val-pm25">—</span>
+            <span class="stat-unit">µg/m³</span>
+        </div>
+        <div class="stat-card pm10">
+            <span class="stat-tag">PM10 (latest)</span>
+            <span class="stat-value" id="val-pm10">—</span>
+            <span class="stat-unit">µg/m³</span>
+        </div>
+    </div>
+
+    <!-- Combined chart -->
+    <div class="chart-card">
+        <div class="chart-card-header">
+            <h2 class="chart-card-title" id="chartTitle">Particulate Matter — Live Trend (last 20 readings)</h2>
+            <div class="legend-pills">
+                <span class="legend-pill pill-pm1">
+                    <span class="swatch" style="background:var(--pm1-color)"></span>PM1.0
+                </span>
+                <span class="legend-pill pill-pm25">
+                    <span class="swatch" style="background:var(--pm25-color)"></span>PM2.5
+                </span>
+                <span class="legend-pill pill-pm10">
+                    <span class="swatch" style="background:var(--pm10-color)"></span>PM10
+                </span>
+            </div>
+        </div>
+        <div class="chart-wrapper">
+            <canvas id="liveChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Data table -->
+    <div class="table-card">
+        <div class="table-header">
+            <h3>📋 Recent Readings</h3>
+            <span class="refresh-info" id="countdownWrap">Next refresh in <span id="countdown">20</span>s</span>
+        </div>
+        <table id="dataTable">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Timestamp</th>
+                    <th>PM1.0 µg/m³</th>
+                    <th>PM2.5 µg/m³</th>
+                    <th>PM10 µg/m³</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody">
+                <tr><td colspan="5" style="text-align:center;color:#8b96ab;padding:2rem;">Loading…</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+const CHANNEL_BASE = 'https://api.thingspeak.com/channels/3457150/feeds.json?api_key=LPRYPQH5UK8E737F';
+
+// ── State (with localStorage persistence) ────────────────────────────────────
+let refreshSec = parseInt(localStorage.getItem('lr_refresh') || '20', 10);
+let dataPts    = parseInt(localStorage.getItem('lr_dataPts') || '20', 10);
+let paused     = false;
+let remaining  = refreshSec;
+let tickTimer  = null;
+
+// Sync inputs to saved values on load
+document.getElementById('refreshSlider').value = refreshSec;
+document.getElementById('refreshVal').textContent = refreshSec;
+
+const dataInput = document.getElementById('dataInput');
+dataInput.value = dataPts;
+updateSubtitle();
+highlightActiveChip(dataPts);
+
+function apiUrl() {
+    return `${CHANNEL_BASE}&results=${dataPts}`;
+}
+
+function updateSubtitle() {
+    document.getElementById('pageSubtitle').textContent =
+        `FEC AQI Sensor — showing last ${dataPts} readings · refreshes every ${refreshSec}s`;
+    document.getElementById('chartTitle').textContent =
+        `Particulate Matter — Live Trend (last ${dataPts} readings)`;
+}
+
+function setDataPoints(val) {
+    const parsed = parseInt(val, 10);
+    if (isNaN(parsed) || parsed < 1) return;
+    dataPts = Math.min(parsed, 8000); // ThingSpeak max limit is 8000
+    dataInput.value = dataPts;
+    localStorage.setItem('lr_dataPts', dataPts);
+    updateSubtitle();
+    highlightActiveChip(dataPts);
+    fetchAndRender();
+}
+
+function highlightActiveChip(val) {
+    document.querySelectorAll('.chip-btn').forEach(btn => {
+        if (parseInt(btn.getAttribute('data-val'), 10) === val) {
+            btn.classList.add('active');
+        } else {
+            btn.classList.remove('active');
+        }
+    });
+}
+
+// ── Slider: refresh rate ──────────────────────────────────────────────────────
+document.getElementById('refreshSlider').addEventListener('input', function() {
+    refreshSec = parseInt(this.value, 10);
+    document.getElementById('refreshVal').textContent = refreshSec;
+    localStorage.setItem('lr_refresh', refreshSec);
+    remaining = refreshSec;   // reset countdown immediately
+    updateSubtitle();
+});
+
+// ── Number Input: data points ────────────────────────────────────────────────
+dataInput.addEventListener('change', function() {
+    setDataPoints(this.value);
+});
+dataInput.addEventListener('keyup', function(e) {
+    if (e.key === 'Enter') setDataPoints(this.value);
+});
+
+// ── Preset Chips ─────────────────────────────────────────────────────────────
+document.querySelectorAll('.chip-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        const val = this.getAttribute('data-val');
+        setDataPoints(val);
+    });
+});
+
+// ── Chart setup ─────────────────────────────────────────────────────────────
+const ctx = document.getElementById('liveChart').getContext('2d');
+const C   = { pm1: '#38bdf8', pm25: '#a78bfa', pm10: '#fb923c' };
+
+const chart = new Chart(ctx, {
+    type: 'line',
+    data: {
+        labels: [],
+        datasets: [
+            {
+                label: 'PM1.0', data: [],
+                borderColor: C.pm1, backgroundColor: 'rgba(56,189,248,0.08)',
+                pointBackgroundColor: C.pm1, pointRadius: 0, pointHoverRadius: 4, pointHitRadius: 10,
+                tension: 0.4, fill: true, borderWidth: 1.8,
+            },
+            {
+                label: 'PM2.5', data: [],
+                borderColor: C.pm25, backgroundColor: 'rgba(167,139,250,0.06)',
+                pointBackgroundColor: C.pm25, pointRadius: 0, pointHoverRadius: 4, pointHitRadius: 10,
+                tension: 0.4, fill: true, borderWidth: 1.8,
+            },
+            {
+                label: 'PM10', data: [],
+                borderColor: C.pm10, backgroundColor: 'rgba(251,146,60,0.06)',
+                pointBackgroundColor: C.pm10, pointRadius: 0, pointHoverRadius: 4, pointHitRadius: 10,
+                tension: 0.4, fill: true, borderWidth: 1.8,
+            },
+        ]
+    },
+    options: {
+        responsive: true, maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        animation: { duration: 600, easing: 'easeInOutQuart' },
+        plugins: {
+            legend: { display: false },
+            tooltip: {
+                backgroundColor: 'rgba(13,17,23,0.92)',
+                borderColor: 'rgba(255,255,255,0.1)', borderWidth: 1,
+                titleColor: '#e6edf3', bodyColor: '#8b96ab', padding: 12,
+                callbacks: { label: c => ` ${c.dataset.label}: ${c.parsed.y ?? '—'} µg/m³` }
+            }
+        },
+        scales: {
+            x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#8b96ab', font: { size: 11 }, maxRotation: 40 } },
+            y: {
+                grid: { color: 'rgba(255,255,255,0.05)' },
+                ticks: { color: '#8b96ab', font: { size: 11 } },
+                title: { display: true, text: 'µg/m³', color: '#8b96ab', font: { size: 11 } },
+                beginAtZero: true
+            }
+        }
+    }
+});
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function fmtTime(iso) {
+    return new Date(iso).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+}
+function fmtDate(iso) {
+    return new Date(iso).toLocaleString('en-GB', {
+        day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', second: '2-digit'
+    });
+}
+function setStatus(ok, msg) {
+    const chip = document.getElementById('statusChip');
+    document.getElementById('statusText').textContent = msg;
+    chip.style.background  = ok ? 'rgba(34,197,94,0.1)'  : 'rgba(239,68,68,0.1)';
+    chip.style.borderColor = ok ? 'rgba(34,197,94,0.3)'  : 'rgba(239,68,68,0.3)';
+    chip.style.color       = ok ? '#4ade80'              : '#f87171';
+    chip.querySelector('.dot').style.background = ok ? '#22c55e' : '#ef4444';
+}
+
+// ── Fetch & render ────────────────────────────────────────────────────────────
+async function fetchAndRender() {
+    try {
+        const res  = await fetch(apiUrl());
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const json = await res.json();
+
+        document.getElementById('errorBanner').style.display = 'none';
+        setStatus(true, 'Live · Connected');
+
+        const feeds = json.feeds || [];
+        if (!feeds.length) { setStatus(false, 'No data'); return; }
+
+        const count = feeds.length;
+        const latest = feeds[count - 1];
+        document.getElementById('val-pm1').textContent  = latest.field1 ?? '—';
+        document.getElementById('val-pm25').textContent = latest.field2 ?? '—';
+        document.getElementById('val-pm10').textContent = latest.field3 ?? '—';
+
+        // ── Dynamic chart styling based on dataset density ───────────────
+        let borderWidth = 1.8;
+        let hoverRadius = 4;
+        let tension = 0.35;
+
+        if (count > 1000) {
+            borderWidth = 0.8;
+            hoverRadius = 2;
+            tension = 0;
+        } else if (count > 200) {
+            borderWidth = 1.1;
+            hoverRadius = 3;
+            tension = 0.15;
+        }
+
+        chart.data.labels = feeds.map(f => count > 500 ? fmtDate(f.created_at) : fmtTime(f.created_at));
+
+        chart.data.datasets.forEach((ds, idx) => {
+            const fieldKey = idx === 0 ? 'field1' : idx === 1 ? 'field2' : 'field3';
+            ds.data = feeds.map(f => f[fieldKey] !== null ? parseFloat(f[fieldKey]) : null);
+            ds.borderWidth = borderWidth;
+            ds.pointHoverRadius = hoverRadius;
+            ds.pointRadius = 0;
+            ds.tension = tension;
+        });
+
+        // Disable heavy animations when dataset is large for instant crisp rendering
+        chart.options.animation = count > 300 ? false : { duration: 500, easing: 'easeInOutQuart' };
+        chart.update('active');
+
+        // ── Update table (render max 100 rows for smooth UI performance) ────
+        const tbody = document.getElementById('tableBody');
+        tbody.innerHTML = '';
+        const tableFeeds = [...feeds].reverse().slice(0, 100);
+        tableFeeds.forEach((f, i) => {
+            const tr = document.createElement('tr');
+            if (i === 0) tr.classList.add('latest-row');
+            tr.innerHTML = `
+                <td style="color:#8b96ab">${f.entry_id}</td>
+                <td>${fmtDate(f.created_at)}</td>
+                <td><span class="badge-pm badge-pm1">${f.field1 ?? '—'}</span></td>
+                <td><span class="badge-pm badge-pm25">${f.field2 ?? '—'}</span></td>
+                <td><span class="badge-pm badge-pm10">${f.field3 ?? '—'}</span></td>
+            `;
+            tbody.appendChild(tr);
+        });
+    } catch (err) {
+        setStatus(false, 'Offline — retrying…');
+        const banner = document.getElementById('errorBanner');
+        banner.style.display = 'block';
+        banner.textContent   = `⚠ Could not fetch data: ${err.message}`;
+    }
+}
+
+// ── Pause / Resume ────────────────────────────────────────────────────────────
+function togglePause() {
+    paused = !paused;
+    const btn = document.getElementById('pauseBtn');
+    const wrap = document.getElementById('countdownWrap');
+    if (paused) {
+        btn.textContent = '▶ Resume';
+        btn.classList.add('paused');
+        wrap.style.opacity = '0.4';
+        setStatus(false, 'Paused');
+    } else {
+        btn.textContent = '⏸ Pause';
+        btn.classList.remove('paused');
+        wrap.style.opacity = '1';
+        remaining = refreshSec;
+        fetchAndRender();
+    }
+}
+
+// ── Manual refresh ────────────────────────────────────────────────────────────
+function manualRefresh() {
+    remaining = refreshSec;
+    fetchAndRender();
+}
+
+// ── Countdown timer ───────────────────────────────────────────────────────────
+const cdEl = document.getElementById('countdown');
+function tick() {
+    if (!paused) {
+        cdEl.textContent = remaining;
+        if (remaining <= 0) {
+            remaining = refreshSec;
+            fetchAndRender();
+        }
+        remaining--;
+    }
+}
+
+fetchAndRender();
+tick();
+setInterval(tick, 1000);
+</script>
+</body>
+</html>

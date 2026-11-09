@@ -1,5 +1,6 @@
 import numpy as np
 from typing import Dict, List, Tuple, Optional
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import logging
 
 from .air_quality_service import AirQualityService
@@ -230,21 +231,33 @@ class RouteOptimizer:
         return new_lat, new_lon
     
     def compare_routes(self, start_lat: float, start_lng: float,
-                      end_lat: float, end_lng: float) -> Dict:
+                      end_lat: float, end_lng: float,
+                      max_workers: int = 8) -> Dict:
         """
-        Compare routes with different priorities.
+        Compare routes with different priorities concurrently in parallel.
         
         Returns a dict keyed by priority name with route data for each.
         """
-        priorities = ['shortest', 'balanced', 'cleanest']
+        priorities = ['shortest', 'balanced', 'cleanest', 'pm25', 'pm10', 'co', 'o3', 'so2']
         results = {}
         
-        for priority in priorities:
-            route = self.find_optimal_route(
-                start_lat, start_lng, end_lat, end_lng,
-                priority=priority
-            )
-            results[priority] = route
+        with ThreadPoolExecutor(max_workers=min(max_workers, len(priorities))) as executor:
+            future_to_priority = {
+                executor.submit(
+                    self.find_optimal_route,
+                    start_lat, start_lng, end_lat, end_lng, priority=priority
+                ): priority
+                for priority in priorities
+            }
+            
+            for future in as_completed(future_to_priority):
+                priority = future_to_priority[future]
+                try:
+                    route = future.result()
+                    if route:
+                        results[priority] = route
+                except Exception as e:
+                    logger.error("Error computing route for priority '%s': %s", priority, e)
         
         return results
 
