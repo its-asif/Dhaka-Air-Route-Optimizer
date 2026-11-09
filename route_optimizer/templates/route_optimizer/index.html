@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Find air-quality-aware routes in Dhaka. Compare routes by distance, AQI, PM2.5, PM10, CO, O3, and SO2.">
-    <h1>Dhaka AQI Route Optimizer</h1>
+    <title>Dhaka AQI Route Optimizer</title>
     {% load static %}
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -20,10 +20,16 @@
                     <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
                     <path d="M2 17l10 5 10-5M2 12l10 5 10-5"></path>
                 </svg>
-                <h1>Kolkata AQI Route Optimizer</h1>
+                <div class="logo-text">
+                    <h1>Dhaka AQI Route Optimizer</h1>
+                    <span class="tagline">Breathe easier — route smarter</span>
+                </div>
             </div>
-            <div class="header-info">
-                <span class="powered-by"></span>
+            <div class="header-info" style="display: flex; gap: 10px; align-items: center;">
+                <span class="powered-by">Live AQI-aware routing</span>
+                <a href="/" style="color: #8b96ab; text-decoration: none; font-weight: 500; font-size: 0.88rem; padding: 6px 12px; border-radius: 8px; border: 1px solid var(--border-color); background: rgba(255,255,255,0.04); transition: all 0.2s;">🏠 Home</a>
+                <a href="/research/dashboard/" style="color: #8b96ab; text-decoration: none; font-weight: 500; font-size: 0.88rem; padding: 6px 12px; border-radius: 8px; border: 1px solid var(--border-color); background: rgba(255,255,255,0.04); transition: all 0.2s;">🔬 Research</a>
+                <a href="/live-report/" style="color: #8b96ab; text-decoration: none; font-weight: 500; font-size: 0.88rem; padding: 6px 12px; border-radius: 8px; border: 1px solid var(--border-color); background: rgba(255,255,255,0.04); transition: all 0.2s;">📡 Live Report</a>
             </div>
         </header>
 
@@ -44,14 +50,16 @@
                 <div class="search-section">
                     <h2>Find Optimal Route</h2>
                     
-                    <div class="input-group">
+                    <div class="input-group" style="position: relative;">
                         <label for="source">Source Location</label>
-                        <input type="text" id="source" placeholder="E.g., Dhanmondi, Dhaka"" />
+                        <input type="text" id="source" placeholder="E.g., Dhanmondi, Dhaka" autocomplete="off" />
+                        <div id="sourceSuggestions" class="autocomplete-dropdown" style="display: none;"></div>
                     </div>
                     
-                    <div class="input-group">
+                    <div class="input-group" style="position: relative;">
                         <label for="destination">Destination Location</label>
-                        <input type="text" id="destination" placeholder="E.g., Gulshan, Dhaka" />
+                        <input type="text" id="destination" placeholder="E.g., Gulshan, Dhaka" autocomplete="off" />
+                        <div id="destinationSuggestions" class="autocomplete-dropdown" style="display: none;"></div>
                     </div>
                     
                     <div class="input-group">

@@ -7,6 +7,74 @@ import logging
 logger = logging.getLogger(__name__)
 
 
+DHAKA_PRESET_LOCATIONS = [
+    {"label": "Dhanmondi, Dhaka", "lat": 23.7461, "lng": 90.3742},
+    {"label": "Dhanmondi 32, Dhaka", "lat": 23.7516, "lng": 90.3781},
+    {"label": "Dhanmondi 27, Dhaka", "lat": 23.7547, "lng": 90.3753},
+    {"label": "Dhanmondi Lake, Dhaka", "lat": 23.7470, "lng": 90.3790},
+    {"label": "Dhanmondi Green Road, Dhaka", "lat": 23.7490, "lng": 90.3860},
+    {"label": "Uttara, Dhaka", "lat": 23.8720, "lng": 90.3980},
+    {"label": "Uttara Sector 1, Dhaka", "lat": 23.8690, "lng": 90.3980},
+    {"label": "Uttara Sector 3, Dhaka", "lat": 23.8680, "lng": 90.3930},
+    {"label": "Uttara Sector 7, Dhaka", "lat": 23.8740, "lng": 90.3960},
+    {"label": "Uttara House Building, Dhaka", "lat": 23.8755, "lng": 90.3995},
+    {"label": "Uttara Diabari, Dhaka", "lat": 23.8820, "lng": 90.3790},
+    {"label": "Mirpur 1, Dhaka", "lat": 23.7950, "lng": 90.3530},
+    {"label": "Mirpur 10, Dhaka", "lat": 23.8069, "lng": 90.3687},
+    {"label": "Mirpur 11, Dhaka", "lat": 23.8160, "lng": 90.3660},
+    {"label": "Mirpur 12, Dhaka", "lat": 23.8240, "lng": 90.3640},
+    {"label": "Mirpur DOHS, Dhaka", "lat": 23.8340, "lng": 90.3690},
+    {"label": "Gulshan 1, Dhaka", "lat": 23.7780, "lng": 90.4160},
+    {"label": "Gulshan 2, Dhaka", "lat": 23.7930, "lng": 90.4140},
+    {"label": "Banani, Dhaka", "lat": 23.7937, "lng": 90.4047},
+    {"label": "Banani Road 11, Dhaka", "lat": 23.7920, "lng": 90.4070},
+    {"label": "Mohakhali, Dhaka", "lat": 23.7778, "lng": 90.4055},
+    {"label": "Mohakhali DOHS, Dhaka", "lat": 23.7820, "lng": 90.3970},
+    {"label": "Farmgate, Dhaka", "lat": 23.7561, "lng": 90.3872},
+    {"label": "Khamarbari, Farmgate, Dhaka", "lat": 23.7580, "lng": 90.3840},
+    {"label": "Shahbagh, Dhaka", "lat": 23.7388, "lng": 90.3960},
+    {"label": "Dhaka University, Shahbagh, Dhaka", "lat": 23.7330, "lng": 90.3930},
+    {"label": "Motijheel, Dhaka", "lat": 23.7330, "lng": 90.4170},
+    {"label": "Shapla Chattar, Motijheel, Dhaka", "lat": 23.7265, "lng": 90.4190},
+    {"label": "Jatrabari, Dhaka", "lat": 23.7075, "lng": 90.4320},
+    {"label": "Agargaon, Dhaka", "lat": 23.7770, "lng": 90.3800},
+    {"label": "IDB Bhaban, Agargaon, Dhaka", "lat": 23.7760, "lng": 90.3820},
+    {"label": "Badda, Dhaka", "lat": 23.7805, "lng": 90.4260},
+    {"label": "Merul Badda, Dhaka", "lat": 23.7690, "lng": 90.4230},
+    {"label": "Rampura, Dhaka", "lat": 23.7610, "lng": 90.4200},
+    {"label": "Moghbazar, Dhaka", "lat": 23.7490, "lng": 90.4070},
+    {"label": "Malibagh, Dhaka", "lat": 23.7470, "lng": 90.4150},
+    {"label": "Mohammadpur, Dhaka", "lat": 23.7658, "lng": 90.3622},
+    {"label": "Mohammadpur Town Hall, Dhaka", "lat": 23.7590, "lng": 90.3640},
+    {"label": "Shyamoli, Dhaka", "lat": 23.7725, "lng": 90.3635},
+    {"label": "Kalyanpur, Dhaka", "lat": 23.7800, "lng": 90.3600},
+    {"label": "Gabtoli Bus Terminal, Dhaka", "lat": 23.7840, "lng": 90.3450},
+    {"label": "Sayedabad Bus Terminal, Dhaka", "lat": 23.7120, "lng": 90.4280},
+    {"label": "Sadarghat Launch Terminal, Dhaka", "lat": 23.7050, "lng": 90.4100},
+    {"label": "Azimpur, Dhaka", "lat": 23.7270, "lng": 90.3860},
+    {"label": "New Market, Dhaka", "lat": 23.7330, "lng": 90.3840},
+    {"label": "Lalbagh Fort, Dhaka", "lat": 23.7188, "lng": 90.3881},
+    {"label": "Puran Dhaka (Old Dhaka), Dhaka", "lat": 23.7100, "lng": 90.4000},
+    {"label": "Chawkbazar, Old Dhaka", "lat": 23.7140, "lng": 90.3970},
+    {"label": "Hazrat Shahjalal International Airport, Dhaka", "lat": 23.8399, "lng": 90.4041},
+    {"label": "Bashundhara Residential Area, Dhaka", "lat": 23.8150, "lng": 90.4320},
+    {"label": "Nikunja 1, Dhaka", "lat": 23.8300, "lng": 90.4170},
+    {"label": "Nikunja 2, Dhaka", "lat": 23.8330, "lng": 90.4190},
+    {"label": "Baridhara Diplomatic Zone, Dhaka", "lat": 23.7990, "lng": 90.4200},
+    {"label": "Tejgaon Industrial Area, Dhaka", "lat": 23.7650, "lng": 90.3980},
+    {"label": "Kawran Bazar, Dhaka", "lat": 23.7510, "lng": 90.3930},
+    {"label": "Panthapath, Dhaka", "lat": 23.7515, "lng": 90.3875},
+    {"label": "Square Hospital, Panthapath, Dhaka", "lat": 23.7525, "lng": 90.3850},
+    {"label": "Bashundhara City Shopping Complex, Panthapath", "lat": 23.7505, "lng": 90.3895},
+    {"label": "Elephant Road, Dhaka", "lat": 23.7380, "lng": 90.3870},
+    {"label": "Bailey Road, Dhaka", "lat": 23.7420, "lng": 90.4050},
+    {"label": "Kakrail, Dhaka", "lat": 23.7370, "lng": 90.4080},
+    {"label": "Purana Paltan, Dhaka", "lat": 23.7310, "lng": 90.4100},
+    {"label": "Khilgaon, Dhaka", "lat": 23.7520, "lng": 90.4260},
+    {"label": "Keraniganj, Dhaka", "lat": 23.6800, "lng": 90.3700},
+]
+
+
 class RoutingService:
     """Service to handle routing using OpenRouteService"""
     
@@ -20,20 +88,32 @@ class RoutingService:
         Get route between two coordinates.
         start_coords, end_coords: (longitude, latitude)
         """
+        coords = [start_coords, end_coords]
         try:
-            coords = [start_coords, end_coords]
             route = self.client.directions(
                 coordinates=coords,
                 profile=profile,
                 format='geojson',
                 instructions=True,
-                elevation=False
+                elevation=False,
+                radiuses=[-1, -1]  # -1 allows unlimited search radius to snap points (e.g. airports/parks) to nearest road
             )
             
             return self._parse_route_data(route)
         except Exception as e:
-            logger.error("Error getting route: %s", e)
-            return None
+            logger.warning("First attempt getting route failed (%s), retrying without explicit radiuses...", e)
+            try:
+                route = self.client.directions(
+                    coordinates=coords,
+                    profile=profile,
+                    format='geojson',
+                    instructions=True,
+                    elevation=False
+                )
+                return self._parse_route_data(route)
+            except Exception as fallback_error:
+                logger.error("Error getting route: %s", fallback_error)
+                return None
     
     def get_alternative_routes(self, start_coords: Tuple[float, float],
                               end_coords: Tuple[float, float],
@@ -89,7 +169,8 @@ class RoutingService:
                     profile=profile,
                     format='geojson',
                     instructions=True,
-                    elevation=False
+                    elevation=False,
+                    radiuses=[-1, -1]
                 )
                 return self._parse_route_data(route)
             
@@ -108,6 +189,7 @@ class RoutingService:
                     format='geojson',
                     instructions=True,
                     elevation=False,
+                    radiuses=[-1] * len(selected_coords),
                     options={
                         'avoid_features': []  # Can add 'highways' to avoid major roads
                     }
@@ -127,7 +209,8 @@ class RoutingService:
                     profile=profile,
                     format='geojson',
                     instructions=True,
-                    elevation=False
+                    elevation=False,
+                    radiuses=[-1] * len(selected_coords)
                 )
                 return self._parse_route_data(route)
                 
@@ -140,7 +223,8 @@ class RoutingService:
                     profile=profile,
                     format='geojson',
                     instructions=True,
-                    elevation=False
+                    elevation=False,
+                    radiuses=[-1, -1]
                 )
                 return self._parse_route_data(route)
             except Exception as fallback_error:
@@ -247,7 +331,9 @@ class RoutingService:
         except Exception as e:
             logger.error("Error getting isochrones: %s", e)
             return None
-    
+
+
+
     def geocode_address(self, address: str) -> Optional[Tuple[float, float]]:
         """
         Convert address to coordinates using Pelias geocoding.
@@ -262,6 +348,56 @@ class RoutingService:
         except Exception as e:
             logger.error("Error geocoding address: %s", e)
             return None
+
+    def autocomplete_address(self, query: str, limit: int = 6) -> List[Dict]:
+        """
+        Get real-time address suggestions for typing using Dhaka preset locations
+        combined with Pelias geocoding search.
+        Returns list of dicts: [{'label': name, 'lat': lat, 'lng': lng}]
+        """
+        clean_q = query.strip().lower()
+        if not clean_q:
+            return []
+        
+        suggestions = []
+        seen_labels = set()
+
+        # 1. Search local preset locations catalog
+        for loc in DHAKA_PRESET_LOCATIONS:
+            if clean_q in loc['label'].lower():
+                suggestions.append(loc)
+                seen_labels.add(loc['label'].lower())
+                if len(suggestions) >= limit:
+                    return suggestions
+
+        # 2. Query live OpenRouteService Pelias API for additional hits
+        try:
+            search_query = query if 'dhaka' in clean_q else f"{query}, Dhaka"
+            result = self.client.pelias_search(
+                text=search_query,
+                focus_point=[90.4125, 23.8103],
+                size=limit
+            )
+            if result and 'features' in result:
+                for feature in result['features']:
+                    props = feature.get('properties', {})
+                    coords = feature.get('geometry', {}).get('coordinates', [])
+                    label = props.get('label') or props.get('name')
+                    if label and len(coords) == 2:
+                        lbl_lower = label.lower()
+                        if lbl_lower not in seen_labels:
+                            suggestions.append({
+                                'label': label,
+                                'lng': coords[0],
+                                'lat': coords[1]
+                            })
+                            seen_labels.add(lbl_lower)
+                            if len(suggestions) >= limit:
+                                break
+        except Exception as e:
+            logger.warning("Pelias live autocomplete fallback warning: %s", e)
+        
+        return suggestions
     
     def reverse_geocode(self, lng: float, lat: float) -> Optional[str]:
         """Convert coordinates to address."""
@@ -313,7 +449,7 @@ class RoutingService:
                 format='geojson',
                 instructions=True,
                 elevation=False,
-                radiuses=[350, 350, 350]  # Allow 350m search radius for waypoints
+                radiuses=[-1, -1, -1]  # -1 allows unlimited search radius to snap all points to nearest road
             )
             
             return self._parse_route_data(route)

@@ -1,0 +1,12 @@
+Model,Setup,RMSE,MAE,MAPE (%),R2 Score
+Baseline Model (Linear),Existing Approach,56.062,49.1896,107.01,-0.1526
+LSTM,Centralized,77.5311,59.104,62.72,-1.2045
+LSTM,Local-only,79.8453,61.6596,65.36,-1.3381
+Attention-LSTM,Local-only,92.6517,76.5196,84.55,-2.1482
+Attention-LSTM,Centralized,92.6524,76.5205,84.55,-2.1483
+GRU,Centralized,100.0835,85.3997,101.0,-2.6735
+GRU,Local-only,100.0845,85.4009,101.01,-2.6736
+Lightweight Transformer,Centralized,106.3229,92.6531,114.9,-3.1458
+Lightweight Transformer,Local-only,106.3249,92.6553,114.9,-3.146
+Temporal CNN,Local-only,108.2015,94.7899,118.67,-3.2936
+Temporal CNN,Centralized,108.2025,94.791,118.68,-3.2937

@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dhaka AQI Research Platform — FL, XAI & Health Routing</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link rel="stylesheet" href="{% static 'css/research.css' %}">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="research-body">
+    <div class="research-container">
+        <!-- Header -->
+        <header class="research-header">
+            <div class="logo">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+                    <path d="M2 17l10 5 10-5M2 12l10 5 10-5"></path>
+                </svg>
+                <div class="logo-text">
+                    <h1>Dhaka AQI Research Platform</h1>
+                    <span class="tagline">Explainable AI • Multi-Route Health Routing</span>
+                </div>
+            </div>
+            <div class="header-actions" style="display: flex; gap: 10px; align-items: center;">
+                <a href="/" class="btn-back">🏠 Home</a>
+                <a href="/dashboard/" class="btn-back">🗺️ Map Dashboard</a>
+                <a href="/live-report/" class="btn-back">📡 Live Report</a>
+            </div>
+        </header>
+
+        <!-- Research Tabs Navigation -->
+        <nav class="research-nav">
+            <button class="nav-tab active" data-tab="forecast">📈 AQI Forecast</button>
+
+            <button class="nav-tab" data-tab="comparison">📊 Model Benchmarks</button>
+            <button class="nav-tab" data-tab="xai">🔍 Explainable AI (XAI)</button>
+            <button class="nav-tab" data-tab="routing">🏥 Health Route Planner</button>
+        </nav>
+
+        <!-- Main Tab Content Area -->
+        <main class="research-content">
+
+            <!-- TAB 1: AQI FORECAST DASHBOARD -->
+            <section id="tab-forecast" class="tab-panel active">
+                <div class="panel-grid">
+                    <div class="card card-control">
+                        <h3>Model Selection & Setup</h3>
+                        <div class="input-group">
+                            <label for="modelSelect">Deep Learning Architecture</label>
+                            <select id="modelSelect">
+                                <option value="Attention-LSTM">Attention-LSTM (Recommended)</option>
+                                <option value="LSTM">Standard LSTM</option>
+                                <option value="GRU">Gated Recurrent Unit (GRU)</option>
+                                <option value="Temporal CNN">Temporal CNN (TCN)</option>
+                                <option value="Lightweight Transformer">Lightweight Transformer</option>
+                            </select>
+                        </div>
+                        <div class="input-group">
+                            <label for="districtSelect">Forecast Location Node</label>
+                            <select id="districtSelect">
+                                <option value="Dhaka">Dhaka Central</option>
+                                <option value="Gazipur">Gazipur Industrial Zone</option>
+                                <option value="Narayanganj">Narayanganj Node</option>
+                                <option value="Munshiganj">Munshiganj Node</option>
+                                <option value="Faridpur">Faridpur Node</option>
+                            </select>
+                        </div>
+                        <button class="btn btn-primary" id="btnForecast">Generate 24-Hour Forecast</button>
+                    </div>
+
+                    <div class="card card-display">
+                        <h3>Predicted Air Quality Index</h3>
+                        <div class="prediction-display">
+                            <div class="metric-box">
+                                <span class="metric-title">Forecasted AQI</span>
+                                <span class="metric-value" id="forecastAqiVal">148.5</span>
+                            </div>
+                            <div class="metric-box">
+                                <span class="metric-title">Health Risk Status</span>
+                                <span class="badge badge-warning" id="forecastStatus">Unhealthy (Sensitive)</span>
+                            </div>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="forecastChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+
+            <!-- TAB 3: MODEL COMPARISON DASHBOARD -->
+            <section id="tab-comparison" class="tab-panel">
+                <div class="card card-full">
+                    <div class="card-header-flex">
+                        <h3>Automated Experiment Metrics Leaderboard</h3>
+                        <button class="btn btn-secondary" id="btnRunBenchmark">🔄 Re-run Benchmark Suite</button>
+                    </div>
+
+                    <div class="best-model-banner" id="bestModelBanner">
+                        🏆 Best Model: <strong>Attention-LSTM (Centralized)</strong> — RMSE: <strong>8.42</strong> | R²: <strong>0.912</strong>
+                    </div>
+
+                    <table class="leaderboard-table" id="leaderboardTable">
+                        <thead>
+                            <tr>
+                                <th>Model Architecture</th>
+                                <th>Training Setup</th>
+                                <th>RMSE</th>
+                                <th>MAE</th>
+                                <th>MAPE (%)</th>
+                                <th>R² Score</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Populated dynamically via JS -->
+                        </tbody>
+                    </table>
+
+                    <div class="plots-grid" style="margin-top: 20px;">
+                        <div class="plot-box">
+                            <h4>RMSE Benchmark Plot</h4>
+                            <img src="/results/comparison_plots/rmse_comparison.png" alt="RMSE Comparison Plot" id="rmsePlotImg" style="width: 100%; border-radius: 8px;" onError="this.style.display='none'" />
+                        </div>
+                        <div class="plot-box">
+                            <h4>R² Score Benchmark Plot</h4>
+                            <img src="/results/comparison_plots/r2_comparison.png" alt="R2 Comparison Plot" id="r2PlotImg" style="width: 100%; border-radius: 8px;" onError="this.style.display='none'" />
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 4: EXPLAINABLE AI (XAI) DASHBOARD -->
+            <section id="tab-xai" class="tab-panel">
+                <div class="panel-grid">
+                    <div class="card">
+                        <h3>SHAP Feature Values</h3>
+                        <p>Quantifies individual pollutant & weather impact on model outputs.</p>
+                        <div class="chart-container">
+                            <canvas id="shapChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h3>Feature Group Attributions</h3>
+                        <p>Pollutant vs Meteorological impact ratio.</p>
+                        <div class="chart-container">
+                            <canvas id="igPieChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card card-full" style="margin-top: 20px;">
+                    <h3>Temporal Attention Sequence Heatmap (t-24h to t-1h)</h3>
+                    <p>Pinpoints historical time periods influencing current forecasts.</p>
+                    <div class="chart-container">
+                        <canvas id="attentionChart"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 5: HEALTH ROUTE PLANNER -->
+            <section id="tab-routing" class="tab-panel">
+                <div class="panel-grid">
+                    <div class="card card-control">
+                        <h3>Multi-Route Health Planner</h3>
+                        <div class="input-group">
+                            <label>Origin Coordinates</label>
+                            <input type="text" id="routeSource" value="23.7925, 90.4078" placeholder="Lat, Lng (e.g. Dhanmondi)" />
+                        </div>
+                        <div class="input-group">
+                            <label>Destination Coordinates</label>
+                            <input type="text" id="routeDest" value="23.7272, 90.4093" placeholder="Lat, Lng (e.g. Motijheel)" />
+                        </div>
+                        <button class="btn btn-primary" id="btnCalculateHealthRoutes">🏥 Calculate 4 Health Routes</button>
+                    </div>
+
+                    <div class="card card-display">
+                        <h3>Route Health Comparison</h3>
+                        <div class="routes-cards-grid" id="routesGrid">
+                            <!-- Populated dynamically via JS -->
+                            <p>Enter coordinates and click "Calculate 4 Health Routes".</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <script src="{% static 'js/research_dashboard.js' %}"></script>
+</body>
+</html>

@@ -378,15 +378,15 @@ function displayRoute(routeData) {
                 ).addTo(map);
                 
                 marker.bindPopup(`
-                    <div style="font-family: Inter, sans-serif; min-width: 200px;">
-                        <h4 style="margin: 0 0 10px 0; color: #224F76;">Checkpoint ${index + 1}</h4>
+                    <div style="font-family: Inter, sans-serif; min-width: 200px; color: #f2f5fa;">
+                        <h4 style="margin: 0 0 10px 0; color: #5b8cff; letter-spacing: 0.02em;">Checkpoint ${index + 1}</h4>
                         <div style="margin: 6px 0;">
                             <strong>AQI:</strong> ${Math.round(aqiPoint.aqi)} 
-                            <span style="background: ${getAQIColor(aqiPoint.aqi)}; padding: 2px 6px; border-radius: 4px; font-size: 0.85em; color: ${aqiPoint.aqi > 150 ? '#fff' : '#000'};">
+                            <span style="background: ${getAQIColor(aqiPoint.aqi)}; padding: 2px 8px; border-radius: 999px; font-size: 0.85em; color: ${aqiPoint.aqi > 150 ? '#fff' : '#000'};">
                                 ${getAQICategory(aqiPoint.aqi)}
                             </span>
                         </div>
-                        <hr style="margin: 8px 0; border: none; border-top: 1px solid #e0e0e0;">
+                        <hr style="margin: 8px 0; border: none; border-top: 1px solid #232c3d;">
                         <div style="margin: 4px 0;"><strong>PM2.5:</strong> ${aqiPoint.pm25 || 'N/A'} µg/m³</div>
                         <div style="margin: 4px 0;"><strong>PM10:</strong> ${aqiPoint.pm10 || 'N/A'} µg/m³</div>
                         <div style="margin: 4px 0;"><strong>NO₂:</strong> ${aqiPoint.no2 || 'N/A'} µg/m³</div>
@@ -477,13 +477,13 @@ function displayComparisonRoutes(routes) {
         }).addTo(map);
         
         routePolyline.bindPopup(`
-            <div style="font-family: Inter, sans-serif;">
-                <h4 style="margin: 0 0 10px 0; color: ${color};">
-                    ${route.priority.toUpperCase()} Route
+            <div style="font-family: Inter, sans-serif; color: #f2f5fa; min-width: 180px;">
+                <h4 style="margin: 0 0 10px 0; color: ${color}; letter-spacing: 0.03em; font-size: 0.85rem;">
+                    ${route.priority.toUpperCase()} ROUTE
                 </h4>
-                <div><strong>Distance:</strong> ${route.distance} km</div>
-                <div><strong>Duration:</strong> ${Math.round(route.duration)} min</div>
-                <div><strong>Avg AQI:</strong> ${Math.round(route.average_aqi)}</div>
+                <div style="margin: 4px 0;"><strong>Distance:</strong> ${route.distance} km</div>
+                <div style="margin: 4px 0;"><strong>Duration:</strong> ${Math.round(route.duration)} min</div>
+                <div style="margin: 4px 0;"><strong>Avg AQI:</strong> <span style="background:${getAQIColor(route.average_aqi)}; color:${route.average_aqi > 150 ? '#fff' : '#000'}; padding:2px 8px; border-radius:999px; font-size:0.8em;">${Math.round(route.average_aqi)}</span></div>
             </div>
         `);
         
@@ -559,39 +559,32 @@ async function compareAllRoutes() {
     showLoading();
     
     try {
-        const priorities = ['shortest', 'balanced', 'cleanest', 'pm25', 'pm10', 'co', 'o3', 'so2'];
-        const routes = [];
+        console.log('🔄 Requesting route comparison from /api/compare-routes/...');
         
-        console.log('🔄 Fetching all route priorities...');
+        const response = await fetch('/api/compare-routes/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrftoken,
+            },
+            body: JSON.stringify({
+                source_address: source,
+                destination_address: destination
+            })
+        });
         
-        for (const priority of priorities) {
-            console.log(`  → Fetching ${priority} route...`);
-            const response = await fetch('/api/find-route/', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': csrftoken,
-                },
-                body: JSON.stringify({
-                    source_address: source,
-                    destination_address: destination,
-                    priority: priority,
-                    pollutant_type: ['pm25', 'pm10', 'co', 'o3', 'so2'].includes(priority) ? priority : null
-                })
-            });
-            
-            const data = await response.json();
-            if (data.success) {
-                routes.push(data.route);
-                console.log(`  ✓ ${priority}: ${data.route.distance}km, AQI ${Math.round(data.route.average_aqi)}`);
+        const data = await response.json();
+        
+        if (data.success && data.comparison) {
+            const routes = Object.values(data.comparison);
+            if (routes.length > 0) {
+                console.log(`✓ Displaying ${routes.length} compared routes`);
+                displayComparisonRoutes(routes);
+            } else {
+                alert('Could not calculate comparative routes. Please try different locations.');
             }
-        }
-        
-        if (routes.length > 0) {
-            console.log(`✓ Displaying ${routes.length} routes`);
-            displayComparisonRoutes(routes);
         } else {
-            alert('Could not compare routes. Please try again.');
+            alert('Error: ' + (data.error || 'Failed to compare routes.'));
         }
         
     } catch (error) {
@@ -677,5 +670,122 @@ document.getElementById('destination').addEventListener('keypress', function(e) 
         findRoute();
     }
 });
+
+// ============================================================================
+// Real-Time Location Autocomplete
+// ============================================================================
+
+function setupAutocomplete(inputId, dropdownId) {
+    const input = document.getElementById(inputId);
+    const dropdown = document.getElementById(dropdownId);
+    if (!input || !dropdown) return;
+
+    let debounceTimer = null;
+    let activeIndex = -1;
+
+    function closeDropdown() {
+        dropdown.style.display = 'none';
+        dropdown.innerHTML = '';
+        activeIndex = -1;
+    }
+
+    async function fetchAndRender(query) {
+        if (!query) {
+            closeDropdown();
+            return;
+        }
+        try {
+            const res = await fetch(`/api/autocomplete/?q=${encodeURIComponent(query)}`);
+            const data = await res.json();
+            
+            if (data.success && data.suggestions && data.suggestions.length > 0) {
+                dropdown.innerHTML = '';
+                activeIndex = -1;
+                
+                data.suggestions.forEach((item) => {
+                    const div = document.createElement('div');
+                    div.className = 'autocomplete-item';
+                    div.innerHTML = `<span class="autocomplete-icon">📍</span> <span>${item.label}</span>`;
+                    div.addEventListener('click', function() {
+                        input.value = item.label;
+                        closeDropdown();
+                    });
+                    dropdown.appendChild(div);
+                });
+                
+                dropdown.style.display = 'block';
+            } else {
+                closeDropdown();
+            }
+        } catch (err) {
+            console.error('Autocomplete error:', err);
+            closeDropdown();
+        }
+    }
+
+    input.addEventListener('input', function() {
+        const query = this.value.trim();
+        clearTimeout(debounceTimer);
+
+        if (!query) {
+            closeDropdown();
+            return;
+        }
+
+        debounceTimer = setTimeout(() => {
+            fetchAndRender(query);
+        }, 100);
+    });
+
+    input.addEventListener('focus', function() {
+        const query = this.value.trim();
+        if (query) {
+            fetchAndRender(query);
+        }
+    });
+
+    input.addEventListener('keydown', function(e) {
+        const items = dropdown.querySelectorAll('.autocomplete-item');
+        if (dropdown.style.display === 'block' && items.length > 0) {
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                activeIndex = (activeIndex + 1) % items.length;
+                updateActiveItem(items);
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                activeIndex = (activeIndex - 1 + items.length) % items.length;
+                updateActiveItem(items);
+            } else if (e.key === 'Enter') {
+                if (activeIndex >= 0 && activeIndex < items.length) {
+                    e.preventDefault();
+                    items[activeIndex].click();
+                }
+            } else if (e.key === 'Escape') {
+                closeDropdown();
+            }
+        }
+    });
+
+    function updateActiveItem(items) {
+        items.forEach((item, idx) => {
+            if (idx === activeIndex) {
+                item.classList.add('active');
+                item.scrollIntoView({ block: 'nearest' });
+            } else {
+                item.classList.remove('active');
+            }
+        });
+    }
+
+    document.addEventListener('click', function(e) {
+        if (!input.contains(e.target) && !dropdown.contains(e.target)) {
+            closeDropdown();
+        }
+    });
+}
+
+// Initialize Autocomplete for Source and Destination
+setupAutocomplete('source', 'sourceSuggestions');
+setupAutocomplete('destination', 'destinationSuggestions');
 
 console.log('Dhaka AQI Route Optimizer loaded successfully!');

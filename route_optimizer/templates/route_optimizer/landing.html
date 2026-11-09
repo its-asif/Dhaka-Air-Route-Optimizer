@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Dhaka Air Route Optimizer — Real-time air quality aware routing platform for Dhaka City.">
+    <title>Dhaka Air Route Optimizer</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* ── Landing-specific overrides ── */
+        body { overflow-x: hidden; overflow-y: auto; height: auto; }
+
+        /* Nav */
+        .landing-nav {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.9rem 2.5rem;
+            background: var(--bg-alt);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 1.75rem;
+            list-style: none;
+        }
+
+        .nav-links a {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.88rem;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+
+        .nav-links a:hover { color: var(--text); }
+
+        .nav-cta {
+            padding: 0.5rem 1rem;
+            background: var(--accent);
+            color: #fff !important;
+            border-radius: 6px;
+            font-weight: 600 !important;
+            transition: background 0.2s !important;
+        }
+
+        .nav-cta:hover { background: var(--accent-hover) !important; }
+
+        /* Hero */
+        .hero {
+            max-width: 820px;
+            margin: 0 auto;
+            padding: 5rem 2.5rem 4rem;
+            text-align: center;
+        }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.35rem 0.9rem;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            font-size: 0.78rem;
+            font-weight: 500;
+            color: var(--text-muted);
+            margin-bottom: 1.5rem;
+        }
+
+        .badge-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--green);
+            animation: blink 2s ease-in-out infinite;
+        }
+
+        .hero-title {
+            font-size: 2.75rem;
+            font-weight: 700;
+            line-height: 1.2;
+            letter-spacing: -0.02em;
+            color: var(--text);
+            margin-bottom: 1.25rem;
+        }
+
+        .hero-subtitle {
+            font-size: 1rem;
+            line-height: 1.7;
+            color: var(--text-muted);
+            max-width: 660px;
+            margin: 0 auto 2.25rem;
+        }
+
+        .hero-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.75rem;
+            background: var(--accent);
+            color: #fff;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.92rem;
+            border-radius: 6px;
+            transition: background 0.2s;
+        }
+
+        .hero-btn:hover { background: var(--accent-hover); }
+
+        /* Stats */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1px;
+            background: var(--border);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            overflow: hidden;
+            margin: 4rem auto 0;
+            max-width: 820px;
+        }
+
+        .stat-card {
+            background: var(--surface);
+            padding: 1.75rem 1.25rem;
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 1.9rem;
+            font-weight: 700;
+            color: var(--text);
+            letter-spacing: -0.02em;
+            margin-bottom: 0.3rem;
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            line-height: 1.4;
+        }
+
+        /* Sections */
+        .section-wrapper {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 4rem 2.5rem;
+        }
+
+        .section-label {
+            font-size: 0.72rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-dim);
+            margin-bottom: 0.5rem;
+        }
+
+        .section-title {
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: var(--text);
+            letter-spacing: -0.01em;
+            margin-bottom: 2.5rem;
+        }
+
+        .divider {
+            border: none;
+            border-top: 1px solid var(--border);
+        }
+
+        /* Cards grid */
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1px;
+            background: var(--border);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .info-card {
+            background: var(--surface);
+            padding: 1.75rem 1.5rem;
+        }
+
+        .card-icon {
+            font-size: 1.4rem;
+            margin-bottom: 0.85rem;
+            display: block;
+        }
+
+        .card-title {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 0.55rem;
+        }
+
+        .card-desc {
+            font-size: 0.85rem;
+            line-height: 1.65;
+            color: var(--text-muted);
+        }
+
+        /* Steps */
+        .steps-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1px;
+            background: var(--border);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .step-card {
+            background: var(--surface);
+            padding: 1.75rem 1.5rem;
+        }
+
+        .step-num {
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-bottom: 0.6rem;
+        }
+
+        .step-title {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 0.5rem;
+        }
+
+        .step-desc {
+            font-size: 0.85rem;
+            line-height: 1.6;
+            color: var(--text-muted);
+        }
+
+        /* CTA */
+        .cta-section {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 0 2.5rem 5rem;
+        }
+
+        .cta-box {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 3rem 2.5rem;
+            text-align: center;
+        }
+
+        .cta-box h2 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 0.75rem;
+        }
+
+        .cta-box p {
+            color: var(--text-muted);
+            font-size: 0.92rem;
+            margin-bottom: 1.75rem;
+        }
+
+        /* Footer */
+        .landing-footer {
+            padding: 1.5rem 2.5rem;
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.8rem;
+            color: var(--text-dim);
+        }
+
+        @media (max-width: 768px) {
+            .hero-title { font-size: 2rem; }
+            .stats-grid, .steps-grid { grid-template-columns: 1fr; }
+            .landing-nav { padding: 0.9rem 1.25rem; }
+            .hero { padding: 3rem 1.25rem 2.5rem; }
+            .section-wrapper, .cta-section { padding-left: 1.25rem; padding-right: 1.25rem; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="landing-nav">
+        <div class="logo">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+                <path d="M2 17l10 5 10-5M2 12l10 5 10-5"></path>
+            </svg>
+            <div class="logo-text">
+                <h1>Dhaka AQI Optimizer</h1>
+                <span class="tagline">Eco-aware routing engine</span>
+            </div>
+        </div>
+        <ul class="nav-links">
+            <li><a href="/">Home</a></li>
+            <li><a href="/research/dashboard/">🔬 Research</a></li>
+            <li><a href="/live-report/">📡 Live Report</a></li>
+            <li><a href="/dashboard/" class="nav-cta">Launch Dashboard →</a></li>
+        </ul>
+    </nav>
+
+    <!-- Hero -->
+    <section class="hero">
+        <div class="hero-badge">
+            <span class="badge-dot"></span>
+            Real-time air quality routing for Dhaka
+        </div>
+        <h1 class="hero-title">Breathe cleaner air on every journey across Dhaka</h1>
+        <p class="hero-subtitle">
+            Dhaka consistently ranks among the world's most air-polluted capitals. Our optimizer ingests live WAQI sensor data to route you through lower-pollution corridors, reducing PM2.5 and PM10 exposure on every trip.
+        </p>
+        <a href="/dashboard/" class="hero-btn">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polygon points="3 11 22 2 13 21 11 13 3 11"></polygon>
+            </svg>
+            Open Interactive Map
+        </a>
+
+        <!-- Stats -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number">25–35%</div>
+                <div class="stat-label">Average reduction in PM2.5 exposure</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">8</div>
+                <div class="stat-label">Optimization priorities (AQI, PM2.5, CO…)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">&lt; 1s</div>
+                <div class="stat-label">Parallel multi-route calculation</div>
+            </div>
+        </div>
+    </section>
+
+    <hr class="divider">
+
+    <!-- AQI Awareness -->
+    <section id="awareness" class="section-wrapper">
+        <p class="section-label">Health & Environmental Impact</p>
+        <h2 class="section-title">Understanding Dhaka's air crisis</h2>
+
+        <div class="cards-grid">
+            <div class="info-card">
+                <span class="card-icon">🌫️</span>
+                <h3 class="card-title">PM2.5 Micro-Particles</h3>
+                <p class="card-desc">Particles under 2.5µm penetrate deep into lungs and the bloodstream. Our engine avoids heavy diesel corridors to reduce long-term cardiovascular exposure.</p>
+            </div>
+            <div class="info-card">
+                <span class="card-icon">💨</span>
+                <h3 class="card-title">PM10 Road Dust</h3>
+                <p class="card-desc">Coarse dust from construction sites and heavy vehicle friction blankets major arteries. The detour algorithm identifies lower-traffic bypass routes.</p>
+            </div>
+            <div class="info-card">
+                <span class="card-icon">🏭</span>
+                <h3 class="card-title">NO₂ & Vehicle Emissions</h3>
+                <p class="card-desc">Nitrogen Dioxide from brick kilns and idling traffic accumulates at congestion bottlenecks. Route optimization steers clear of dense emission clusters.</p>
+            </div>
+        </div>
+    </section>
+
+    <hr class="divider">
+
+    <!-- How It Works -->
+    <section id="how-it-works" class="section-wrapper">
+        <p class="section-label">Algorithm Workflow</p>
+        <h2 class="section-title">How eco-routing works</h2>
+
+        <div class="steps-grid">
+            <div class="step-card">
+                <div class="step-num">Step 01</div>
+                <h3 class="step-title">Live API Ingestion</h3>
+                <p class="step-desc">Queries real-time WAQI monitoring stations across Dhaka to map active pollutant concentrations at route checkpoints.</p>
+            </div>
+            <div class="step-card">
+                <div class="step-num">Step 02</div>
+                <h3 class="step-title">Detour Optimization</h3>
+                <p class="step-desc">Calculates mid-point bearing angles and lateral waypoints to route around high-pollution hotspots while minimising added distance.</p>
+            </div>
+            <div class="step-card">
+                <div class="step-num">Step 03</div>
+                <h3 class="step-title">Parallel Dispatch</h3>
+                <p class="step-desc">Evaluates all 8 priority strategies concurrently and presents a side-by-side comparison of distance, time, and AQI scores.</p>
+            </div>
+        </div>
+    </section>
+
+    <hr class="divider">
+
+    <!-- CTA -->
+    <section class="cta-section" style="padding-top: 4rem;">
+        <div class="cta-box">
+            <h2>Ready to plan your clean route?</h2>
+            <p>Open the interactive map and find your lowest-pollution path through Dhaka.</p>
+            <a href="/dashboard/" class="hero-btn">Open Map Dashboard →</a>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="landing-footer">
+        <span>© 2026 Dhaka Air Route Optimizer</span>
+        <span>Powered by OpenRouteService &amp; WAQI API</span>
+    </footer>
+</body>
+</html>
