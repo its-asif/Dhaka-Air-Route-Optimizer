@@ -1,0 +1,96 @@
+{
+  "best_model": "Baseline Model (Linear)",
+  "best_setup": "Existing Approach",
+  "best_rmse": 56.062,
+  "best_r2": -0.1526,
+  "leaderboard": [
+    {
+      "Model": "Baseline Model (Linear)",
+      "Setup": "Existing Approach",
+      "RMSE": 56.062,
+      "MAE": 49.1896,
+      "MAPE (%)": 107.01,
+      "R2 Score": -0.1526
+    },
+    {
+      "Model": "LSTM",
+      "Setup": "Centralized",
+      "RMSE": 77.5311,
+      "MAE": 59.104,
+      "MAPE (%)": 62.72,
+      "R2 Score": -1.2045
+    },
+    {
+      "Model": "LSTM",
+      "Setup": "Local-only",
+      "RMSE": 79.8453,
+      "MAE": 61.6596,
+      "MAPE (%)": 65.36,
+      "R2 Score": -1.3381
+    },
+    {
+      "Model": "Attention-LSTM",
+      "Setup": "Local-only",
+      "RMSE": 92.6517,
+      "MAE": 76.5196,
+      "MAPE (%)": 84.55,
+      "R2 Score": -2.1482
+    },
+    {
+      "Model": "Attention-LSTM",
+      "Setup": "Centralized",
+      "RMSE": 92.6524,
+      "MAE": 76.5205,
+      "MAPE (%)": 84.55,
+      "R2 Score": -2.1483
+    },
+    {
+      "Model": "GRU",
+      "Setup": "Centralized",
+      "RMSE": 100.0835,
+      "MAE": 85.3997,
+      "MAPE (%)": 101.0,
+      "R2 Score": -2.6735
+    },
+    {
+      "Model": "GRU",
+      "Setup": "Local-only",
+      "RMSE": 100.0845,
+      "MAE": 85.4009,
+      "MAPE (%)": 101.01,
+      "R2 Score": -2.6736
+    },
+    {
+      "Model": "Lightweight Transformer",
+      "Setup": "Centralized",
+      "RMSE": 106.3229,
+      "MAE": 92.6531,
+      "MAPE (%)": 114.9,
+      "R2 Score": -3.1458
+    },
+    {
+      "Model": "Lightweight Transformer",
+      "Setup": "Local-only",
+      "RMSE": 106.3249,
+      "MAE": 92.6553,
+      "MAPE (%)": 114.9,
+      "R2 Score": -3.146
+    },
+    {
+      "Model": "Temporal CNN",
+      "Setup": "Local-only",
+      "RMSE": 108.2015,
+      "MAE": 94.7899,
+      "MAPE (%)": 118.67,
+      "R2 Score": -3.2936
+    },
+    {
+      "Model": "Temporal CNN",
+      "Setup": "Centralized",
+      "RMSE": 108.2025,
+      "MAE": 94.791,
+      "MAPE (%)": 118.68,
+      "R2 Score": -3.2937
+    }
+  ]
+}

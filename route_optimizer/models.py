@@ -24,7 +24,12 @@ class RouteHistory(models.Model):
     PRIORITY_CHOICES = [
         ('shortest', 'Shortest Distance'),
         ('cleanest', 'Cleanest Air'),
-        ('balanced', 'Balanced'),
+        ('balanced', 'Balanced (Distance + AQI)'),
+        ('pm25', 'Minimum PM2.5'),
+        ('pm10', 'Minimum PM10'),
+        ('co', 'Minimum CO'),
+        ('o3', 'Minimum O3'),
+        ('so2', 'Minimum SO2'),
     ]
 
     user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)

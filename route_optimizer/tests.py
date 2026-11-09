@@ -5,6 +5,7 @@ import json
 from .models import Location, RouteHistory
 from .services.dijkstra_optimizer import RouteOptimizer, DijkstraOptimizer
 from .services.air_quality_service import AirQualityService
+from .services.ml_prediction_service import MLPredictionService
 
 
 class ModelTests(TestCase):
@@ -67,15 +68,27 @@ class ViewTests(TestCase):
     def setUp(self):
         self.client = Client()
 
+    def test_landing_page_loads(self):
+        """Test that the landing home page renders successfully."""
+        response = self.client.get(reverse('route_optimizer:landing'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Dhaka AQI Optimizer')
+
+    def test_dashboard_page_loads(self):
+        """Test that the dashboard page renders successfully."""
+        response = self.client.get(reverse('route_optimizer:dashboard'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Dhaka AQI Route Optimizer')
+
     def test_index_page_loads(self):
-        """Test that the main page renders successfully."""
+        """Test that index legacy route resolves and renders successfully."""
         response = self.client.get(reverse('route_optimizer:index'))
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'Kolkata AQI Route Optimizer')
+        self.assertContains(response, 'Dhaka AQI Route Optimizer')
 
-    def test_index_contains_map(self):
-        """Test that index page contains the map div."""
-        response = self.client.get(reverse('route_optimizer:index'))
+    def test_dashboard_contains_map(self):
+        """Test that dashboard page contains the map div."""
+        response = self.client.get(reverse('route_optimizer:dashboard'))
         self.assertContains(response, 'id="map"')
 
     def test_find_route_requires_post(self):
@@ -134,9 +147,27 @@ class ViewTests(TestCase):
         response = self.client.get(reverse('route_optimizer:compare_routes'))
         self.assertEqual(response.status_code, 405)
 
+    def test_compare_routes_requires_valid_json(self):
+        """Test that compare_routes validates request body."""
+        response = self.client.post(
+            reverse('route_optimizer:compare_routes'),
+            data='not-json',
+            content_type='application/json'
+        )
+        self.assertEqual(response.status_code, 400)
+        data = json.loads(response.content)
+        self.assertFalse(data['success'])
+
 
 class ServiceTests(TestCase):
     """Tests for service layer."""
+
+    def test_ml_prediction_service(self):
+        """Test MLPredictionService loads artifacts and computes predictions."""
+        service = MLPredictionService()
+        predicted = service.predict_aqi(pm25=120, pm10=140, co=5, no2=25, o3=15)
+        self.assertIsInstance(predicted, float)
+        self.assertGreater(predicted, 0.0)
 
     def test_route_optimizer_backward_compat(self):
         """Test that DijkstraOptimizer alias still works."""
@@ -217,9 +248,12 @@ class URLTests(TestCase):
 
     def test_urls_resolve(self):
         """Test that all named URLs resolve correctly."""
-        self.assertEqual(reverse('route_optimizer:index'), '/')
+        self.assertEqual(reverse('route_optimizer:landing'), '/')
+        self.assertEqual(reverse('route_optimizer:dashboard'), '/dashboard/')
+        self.assertEqual(reverse('route_optimizer:index'), '/index/')
         self.assertEqual(reverse('route_optimizer:find_route'), '/api/find-route/')
         self.assertEqual(reverse('route_optimizer:compare_routes'), '/api/compare-routes/')
         self.assertEqual(reverse('route_optimizer:get_history'), '/api/history/')
         self.assertEqual(reverse('route_optimizer:get_aqi'), '/api/get-aqi/')
+        self.assertEqual(reverse('route_optimizer:geocode_autocomplete'), '/api/autocomplete/')
 
